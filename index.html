@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión </title>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-cogs"></i> <span>Sistema Gestión 0.1</span></h3>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li><a href="#" class="active" data-target="dashboard"><i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span></a></li>
+                <li><a href="#" data-target="fallas"><i class="fas fa-exclamation-triangle"></i> <span>Gestión de
+                            Fallas</span></a></li>
+                <li><a href="#" data-target="combustible"><i class="fas fa-gas-pump"></i> <span>Gestión de
+                            Combustible</span></a></li>
+                <li><a href="#" data-target="falla-nodos"><i class="fas fa-server"></i> <span>Falla de Nodos</span></a>
+                <li><a href="#" data-target="falla-general"><i class="fas fa-tools"></i> <span>Falla General</span></a>
+                <li><a href="#" data-target="inventario"><i class="fas fa-boxes"></i> <span>Inventario</span></a></li>
+                <li><a href="#" data-target="instalaciones"><i class="fas fa-wifi"></i> <span>Instalaciones</span></a>
+                </li>
+                </li>
+                </li>
+                <li><a href="#" data-target="reportes"><i class="fas fa-chart-bar"></i> <span>Reportes</span></a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Sistema de Gestión</h1>
+            </div>
+            <div class="header-right">
+                <div class="date-display">
+                    <i class="fas fa-calendar-alt"></i> <span id="currentDate"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Dashboard Module -->
+            <div id="dashboard" class="module active">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-primary">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalFallas">0</div>
+                            <div class="stat-title">Total Fallas Registradas</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="fallasPendientes">0</div>
+                            <div class="stat-title">Fallas Pendientes</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="fallasResueltas">0</div>
+                            <div class="stat-title">Fallas Resueltas</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-info">
+                            <i class="fas fa-gas-pump"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalCombustible">0 L</div>
+                            <div class="stat-title">Combustible Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Estado de Fallas</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="fallasChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Movimiento de Combustible</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="combustibleChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Últimas Fallas Registradas</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="recentFallas">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Ubicación</th>
+                                    <th>Tipo</th>
+                                    <th>Falla</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fallas Module -->
+            <div id="fallas" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Gestión de Fallas</h2>
+                </div>
+                <div class="module-body">
+                    <form id="formFalla">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombreCliente">Nombre del Cliente</label>
+                                <input type="text" id="nombreCliente" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ubicacionCliente">Ubicación</label>
+                                <input type="text" id="ubicacionCliente" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="tipoFalla">Tipo de Falla</label>
+                                <select id="tipoFalla" class="form-control" required>
+                                    <option value="queja">Queja</option>
+                                    <option value="tecnico">Problema Técnico</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="estadoFalla">Estado</label>
+                                <select id="estadoFalla" class="form-control">
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="resuelto">Resuelto</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="descripcionFalla">Descripción de la Falla</label>
+                            <textarea id="descripcionFalla" class="form-control" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Registrar
+                            Falla</button>
+                    </form>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filterEstado">Filtrar por estado</label>
+                            <select id="filterEstado" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterTipo">Filtrar por tipo</label>
+                            <select id="filterTipo" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="queja">Queja</option>
+                                <option value="tecnico">Problema Técnico</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tablaFallas">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Ubicación</th>
+                                    <th>Tipo</th>
+                                    <th>Falla</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Combustible Module -->
+            <div id="combustible" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-gas-pump"></i> Gestión de Combustible</h2>
+                </div>
+                <div class="module-body">
+                    <div class="inventory-container">
+                        <div class="inventory-card">
+                            <i class="fas fa-sign-in-alt" style="font-size: 36px; color: #28a745;"></i>
+                            <div class="inventory-value" id="totalEntradas">0 L</div>
+                            <div class="inventory-title">Total Entradas</div>
+                        </div>
+                        <div class="inventory-card">
+                            <i class="fas fa-sign-out-alt" style="font-size: 36px; color: #dc3545;"></i>
+                            <div class="inventory-value" id="totalSalidas">0 L</div>
+                            <div class="inventory-title">Total Salidas</div>
+                        </div>
+                        <div class="inventory-card">
+                            <i class="fas fa-database" style="font-size: 36px; color: #17a2b8;"></i>
+                            <div class="inventory-value" id="inventarioActual">0 L</div>
+                            <div class="inventory-title">Inventario Actual</div>
+                        </div>
+                    </div>
+
+                    <form id="formCombustible">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="tipoMovimiento">Tipo de Movimiento</label>
+                                <select id="tipoMovimiento" class="form-control" required>
+                                    <option value="entrada">Entrada</option>
+                                    <option value="salida">Salida</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cantidadCombustible">Cantidad (litros)</label>
+                                <input type="number" id="cantidadCombustible" class="form-control" required min="0"
+                                    step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fechaCombustible">Fecha</label>
+                                <input type="datetime-local" id="fechaCombustible" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="notasCombustible">Notas</label>
+                                <input type="text" id="notasCombustible" class="form-control"
+                                    placeholder="Detalles del movimiento">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Registrar
+                            Movimiento</button>
+                    </form>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filterMovimiento">Filtrar por tipo</label>
+                            <select id="filterMovimiento" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="entrada">Entradas</option>
+                                <option value="salida">Salidas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tablaCombustible">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Cantidad (L)</th>
+                                    <th>Fecha</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Falla de Nodos Module -->
+            <div id="falla-nodos" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-server"></i> Gestión de Fallas de Nodos</h2>
+                </div>
+                <div class="module-body">
+                    <form id="formFallaNodo">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fechaNodo">Fecha</label>
+                                <input type="date" id="fechaNodo" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="horaNodo">Hora</label>
+                                <input type="time" id="horaNodo" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombreNodo">Nombre del Nodo</label>
+                                <input type="text" id="nombreNodo" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tecnicoAsignado">Técnico Asignado</label>
+                                <input type="text" id="tecnicoAsignado" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcionFallaNodo">Descripción de la Falla</label>
+                            <textarea id="descripcionFallaNodo" class="form-control" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Productos Necesarios para Reparación</label>
+                            <div class="product-list" id="productosList">
+                                <div class="product-item">
+                                    <input type="text" placeholder="Nombre del producto"
+                                        class="producto-nombre form-control">
+                                    <input type="number" placeholder="Cantidad" class="producto-cantidad form-control"
+                                        min="1">
+                                    <button type="button" class="btn btn-danger remove-product">Eliminar</button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="agregarProducto">+ Agregar
+                                Producto</button>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="estadoNodo">Estado</label>
+                                <select id="estadoNodo" class="form-control" required>
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En Proceso">En Proceso</option>
+                                    <option value="Resuelto">Resuelto</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="observacionesNodo">Observaciones</label>
+                            <textarea id="observacionesNodo" class="form-control"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Registrar Falla de
+                            Nodo</button>
+                        <button type="button" class="btn btn-secondary" id="btnLimpiarNodo">Limpiar Formulario</button>
+                    </form>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filtroEstadoNodo">Filtrar por estado</label>
+                            <select id="filtroEstadoNodo" class="form-control">
+                                <option value="Todos">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En Proceso">En Proceso</option>
+                                <option value="Resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tablaFallasNodos" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Nodo</th>
+                                    <th>Falla</th>
+                                    <th>Productos</th>
+                                    <th>Técnico</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Falla General Module -->
+            <div id="falla-general" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-tools"></i> Registro de Falla General</h2>
+                </div>
+                <div class="module-body">
+                    <form id="formFallaGeneral">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fechaFallaGeneral">Fecha</label>
+                                <input type="date" id="fechaFallaGeneral" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="horaFallaGeneral">Hora</label>
+                                <input type="time" id="horaFallaGeneral" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="tipoFallaGeneral">Tipo de Falla</label>
+                                <select id="tipoFallaGeneral" class="form-control" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    <option value="vehiculo">Vehículo/Auto</option>
+                                    <option value="equipo">Equipo de Trabajo</option>
+                                    <option value="infraestructura">Infraestructura</option>
+                                    <option value="sistema">Sistema/Software</option>
+                                    <option value="comunicacion">Comunicación</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="prioridadFallaGeneral">Prioridad</label>
+                                <select id="prioridadFallaGeneral" class="form-control" required>
+                                    <option value="baja">Baja</option>
+                                    <option value="media">Media</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="critica">Crítica</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tituloFallaGeneral">Título de la Falla</label>
+                            <input type="text" id="tituloFallaGeneral" class="form-control"
+                                placeholder="Ej: Se dañó el carro XYZ" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcionFallaGeneral">Descripción Detallada</label>
+                            <textarea id="descripcionFallaGeneral" class="form-control" rows="3"
+                                placeholder="Describa la falla en detalle..." required></textarea>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="personaNotificada">Persona Notificada</label>
+                                <input type="text" id="personaNotificada" class="form-control"
+                                    placeholder="Nombre de quien reportó la falla" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="medioNotificacion">Medio de Notificación</label>
+                                <select id="medioNotificacion" class="form-control" required>
+                                    <option value="telefono">Teléfono</option>
+                                    <option value="correo">Correo Electrónico</option>
+                                    <option value="presencial">Presencial</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="sistema">Sistema/Plataforma</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="accionesTomadas">Acciones Tomadas para Solucionar</label>
+                            <textarea id="accionesTomadas" class="form-control" rows="3"
+                                placeholder="Describa las acciones realizadas para solucionar la falla..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="solucionAplicada">Solución Aplicada</label>
+                            <textarea id="solucionAplicada" class="form-control" rows="2"
+                                placeholder="Describa la solución final aplicada..."></textarea>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="estadoFallaGeneral">Estado</label>
+                                <select id="estadoFallaGeneral" class="form-control" required>
+                                    <option value="reportada">Reportada</option>
+                                    <option value="en-proceso">En Proceso</option>
+                                    <option value="resuelta">Resuelta</option>
+                                    <option value="cerrada">Cerrada</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+                            <label for="observacionesFallaGeneral">Observaciones Adicionales</label>
+                            <textarea id="observacionesFallaGeneral" class="form-control" rows="2"
+                                placeholder="Observaciones o comentarios adicionales..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Registrar Falla
+                            General</button>
+                        <button type="button" class="btn btn-secondary" id="btnLimpiarFallaGeneral">Limpiar
+                            Formulario</button>
+                    </form>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filtroEstadoFallaGeneral">Filtrar por estado</label>
+                            <select id="filtroEstadoFallaGeneral" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="reportada">Reportada</option>
+                                <option value="en-proceso">En Proceso</option>
+                                <option value="resuelta">Resuelta</option>
+                                <option value="cerrada">Cerrada</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filtroTipoFallaGeneral">Filtrar por tipo</label>
+                            <select id="filtroTipoFallaGeneral" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="vehiculo">Vehículo/Auto</option>
+                                <option value="equipo">Equipo de Trabajo</option>
+                                <option value="infraestructura">Infraestructura</option>
+                                <option value="sistema">Sistema/Software</option>
+                                <option value="comunicacion">Comunicación</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filtroPrioridadFallaGeneral">Filtrar por prioridad</label>
+                            <select id="filtroPrioridadFallaGeneral" class="form-control">
+                                <option value="todos">Todos</option>
+                                <option value="baja">Baja</option>
+                                <option value="media">Media</option>
+                                <option value="alta">Alta</option>
+                                <option value="critica">Crítica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tablaFallasGenerales" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Título</th>
+                                    <th>Persona Notificada</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventario Module -->
+            <div id="inventario" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-boxes"></i> Gestión de Inventario</h2>
+                </div>
+                <div class="module-body">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Registrar Nuevo Producto</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="formProducto">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="categoriaProducto">Categoría *</label>
+                                        <select id="categoriaProducto" class="form-control" required
+                                            onchange="actualizarCamposCategoria()">
+                                            <option value="">Seleccionar categoría</option>
+                                            <option value="router">Routers</option>
+                                            <option value="antena">Antenas</option>
+                                            <option value="conector">Conectores</option>
+                                            <option value="cable">Cables</option>
+                                            <option value="onu">ONU</option>
+                                            <option value="onurouter">ONU Router</option>
+                                            <option value="roseta">Roseta</option>
+                                            <option value="accesorio">Accesorios</option>
+                                            <option value="herramienta">Herramientas</option>
+                                            <option value="otro">Otros</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="nombreProductoGroup">
+                                        <label for="nombreProducto">Nombre del Producto *</label>
+                                        <input type="text" id="nombreProducto" class="form-control" required>
+                                    </div>
+                                </div>
+
+                                <!-- Campos generales (se muestran para la mayoría de categorías) -->
+                                <div class="form-grid" id="formularioBasico">
+                                    <div class="form-group">
+                                        <label for="modeloProducto">Modelo</label>
+                                        <input type="text" id="modeloProducto" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cantidadProducto">Cantidad *</label>
+                                        <input type="number" id="cantidadProducto" class="form-control" min="0"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <!-- Campos específicos para CABLE -->
+                                <div class="form-grid" id="tipoCableGroup" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="tipoCable">Tipo de Cable *</label>
+                                        <select id="tipoCable" class="form-control">
+                                            <option value="utp">UTP</option>
+                                            <option value="drop">Drop</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="metrajeGroup" style="display: none;">
+                                        <label for="metrajeProducto">Metraje (metros) *</label>
+                                        <input type="number" id="metrajeProducto" class="form-control" min="0"
+                                            step="0.5" required>
+                                    </div>
+                                </div>
+
+                                <!-- Campos específicos para CONECTORES -->
+                                <div id="tipoConectorGroup" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="tipoConector">Tipo de Conector *</label>
+                                        <select id="tipoConector" class="form-control"
+                                            onchange="actualizarCamposConector()">
+                                            <option value="">Seleccionar tipo</option>
+                                            <option value="inalambrico">Inalámbrico</option>
+                                            <option value="fibra">Fibra</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Campos para CONECTORES INALÁMBRICOS -->
+                                    <div id="inalambricoFields" style="display: none;">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label for="modeloRJ45">Modelo RJ45 *</label>
+                                                <input type="text" id="modeloRJ45" class="form-control">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="cantidadRJ45">Cantidad *</label>
+                                                <input type="number" id="cantidadRJ45" name="cantidadRJ45"
+                                                    class="form-control" min="0" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos para CONECTORES DE FIBRA -->
+                                    <div id="fibraFields" style="display: none;">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label for="cantidadAPC">Conector APC (Verde) *</label>
+                                                <input type="number" id="cantidadAPC" name="cantidadAPC"
+                                                    class="form-control" min="0" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="cantidadUPC">Conector UPC (Azul) *</label>
+                                                <input type="number" id="cantidadUPC" name="cantidadUPC"
+                                                    class="form-control" min="0" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Campos específicos para OTROS -->
+                                <div id="formularioOtros" style="display: none;">
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="modeloOtro">Modelo</label>
+                                            <input type="text" id="modeloOtro" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="cantidadOtro">Cantidad *</label>
+                                            <input type="number" id="cantidadOtro" name="cantidadOtro"
+                                                class="form-control" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="marcaOtro">Marca</label>
+                                            <input type="text" id="marcaOtro" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="serieOtro">Número de Serie</label>
+                                            <input type="text" id="serieOtro" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="caracteristicasOtro">Características</label>
+                                        <textarea id="caracteristicasOtro" class="form-control" rows="3"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="descripcionProducto">Descripción</label>
+                                    <textarea id="descripcionProducto" class="form-control" rows="2"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-success" id="btnSubmitProducto">
+                                    <i class="fas fa-save"></i> Registrar Producto
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btnLimpiarProducto">
+                                    Limpiar Formulario
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h3>Inventario Actual</h3>
+                            <div>
+                                <button class="btn btn-primary" id="btnActualizarInventario"
+                                    onclick="cargarInventario()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="filters">
+                                <div class="filter-group">
+                                    <label for="filtroCategoria">Filtrar por categoría</label>
+                                    <select id="filtroCategoria" class="form-control">
+                                        <option value="todos">Todas las categorías</option>
+                                        <option value="router">Routers</option>
+                                        <option value="antena">Antenas</option>
+                                        <option value="conector">Conectores</option>
+                                        <option value="cable">Cables</option>
+                                        <option value="onu">ONU</option>
+                                        <option value="onurouter">ONU Router</option>
+                                        <option value="roseta">Roseta</option>
+                                        <option value="accesorio">Accesorios</option>
+                                        <option value="herramienta">Herramientas</option>
+                                        <option value="otro">Otros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="tablaInventario" class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Categoría</th>
+                                            <th>Producto</th>
+                                            <th>Cantidad/Metraje</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Los datos se cargarán dinámicamente desde JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instalaciones Module -->
+            <div id="instalaciones" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-wifi"></i> Gestión de Instalaciones</h2>
+                </div>
+                <div class="module-body">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Registrar Nueva Instalación</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="formInstalacion">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="fechaInstalacion">Fecha de Instalación</label>
+                                        <input type="date" id="fechaInstalacion" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cedulaInstalacion">Cédula del Cliente</label>
+                                        <input type="text" id="cedulaInstalacion" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="clienteInstalacion">Nombre del Cliente *</label>
+                                        <input type="text" id="clienteInstalacion" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="telefonoInstalacion">Teléfono</label>
+                                        <input type="tel" id="telefonoInstalacion" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="direccionInstalacion">Dirección *</label>
+                                    <input type="text" id="direccionInstalacion" class="form-control" required>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="tipoInstalacion">Tipo de Instalación *</label>
+                                        <select id="tipoInstalacion" class="form-control" required>
+                                            <option value="inalambrico">Inalámbrico</option>
+                                            <option value="fibra">Fibra Óptica</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tecnicoInstalacion">Técnico Asignado *</label>
+                                        <input type="text" id="tecnicoInstalacion" class="form-control" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Seleccionar Equipos</label>
+                                    <div class="equipo-selector" id="equipoSelector">
+                                        <!-- Los equipos se cargarán dinámicamente según el tipo de instalación -->
+                                    </div>
+                                    <button type="button" class="btn btn-secondary mt-2" id="btnAgregarEquipo">
+                                        <i class="fas fa-plus"></i> Agregar Nuevo Equipo
+                                    </button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Productos Utilizados</label>
+                                    <div class="productos-list" id="productosInstalacion">
+                                        <!-- Los productos se agregarán dinámicamente -->
+                                    </div>
+                                    <button type="button" class="btn btn-secondary mt-2" id="btnAgregarProducto">
+                                        <i class="fas fa-plus"></i> Agregar Producto Manualmente
+                                    </button>
+                                </div>
+
+                                <div id="codigosEquipos">
+                                    <!-- Aquí se agregarán los campos para códigos de ONU/ONU Router -->
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="tipoCableInstalacion">Tipo de Cable *</label>
+                                        <select id="tipoCableInstalacion" class="form-control" required>
+                                            <option value="utp">UTP</option>
+                                            <option value="drop">Drop</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cableInstalacion">Metros de Cable Utilizados (m) *</label>
+                                        <input type="number" id="cableInstalacion" class="form-control" min="0"
+                                            step="0.5" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="observacionesInstalacion">Observaciones</label>
+                                    <textarea id="observacionesInstalacion" class="form-control" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="estadoInstalacion">Estado *</label>
+                                    <select id="estadoInstalacion" class="form-control" required>
+                                        <option value="programada">Programada</option>
+                                        <option value="en-proceso">En Proceso</option>
+                                        <option value="completada">Completada</option>
+                                        <option value="cancelada">Cancelada</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Registrar Instalación
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btnLimpiarInstalacion">
+                                    Limpiar Formulario
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h3>Historial de Instalaciones</h3>
+                            <div class="d-flex align-items-center">
+                                <div class="input-group" style="max-width: 350px;">
+                                    <input type="text" id="inputBuscarInstalaciones" class="form-control"
+                                         placeholder="Buscar por cliente, cédula, teléfono, técnico, código...">
+                                    <div class="input-group-append">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters">
+                            <div class="filter-group">
+                                <label for="filtroEstadoInstalacion">Filtrar por estado</label>
+                                <select id="filtroEstadoInstalacion" class="form-control">
+                                    <option value="todos">Todos los estados</option>
+                                    <option value="programada">Programada</option>
+                                    <option value="en-proceso">En Proceso</option>
+                                    <option value="completada">Completada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filtroTipoInstalacion">Filtrar por tipo</label>
+                                <select id="filtroTipoInstalacion" class="form-control">
+                                    <option value="todos">Todos los tipos</option>
+                                    <option value="inalambrico">Inalámbrico</option>
+                                    <option value="fibra">Fibra Óptica</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table id="tablaInstalaciones" class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Cédula</th>
+                                        <th>Tipo</th>
+                                        <th>Técnico</th>
+                                        <th>Productos</th>
+                                        <th>Cable</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Los datos se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reportes Module -->
+        <div id="reportes" class="module">
+            <div class="module-header">
+                <h2><i class="fas fa-chart-bar"></i> Reportes Generales</h2>
+            </div>
+            <div class="module-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Filtros de Reporte</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="formFiltroReporte">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="reporteTipo">Tipo de Reporte</label>
+                                    <select id="reporteTipo" class="form-control" required>
+                                        <option value="todos">Todos los Registros</option>
+                                        <option value="fallas-clientes">Fallas de Clientes</option>
+                                        <option value="fallas-generales">Fallas Generales</option>
+                                        <option value="fallas-nodos">Fallas de Nodos</option>
+                                        <option value="combustible">Combustible</option>
+                                        <option value="estadisticas">Estadísticas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reporteSubtipo">Subtipo</label>
+                                    <select id="reporteSubtipo" class="form-control">
+                                        <option value="todos">Todos</option>
+                                        <!-- Opciones se cargarán dinámicamente -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="reporteFechaDesde">Desde</label>
+                                    <input type="date" id="reporteFechaDesde" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reporteFechaHasta">Hasta</label>
+                                    <input type="date" id="reporteFechaHasta" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="reporteEstado">Estado</label>
+                                    <select id="reporteEstado" class="form-control">
+                                        <option value="todos">Todos los estados</option>
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="en-proceso">En Proceso</option>
+                                        <option value="resuelto">Resuelto</option>
+                                        <option value="cerrado">Cerrado</option>
+                                        <option value="reportada">Reportada</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reporteOrden">Ordenar por</label>
+                                    <select id="reporteOrden" class="form-control">
+                                        <option value="fecha-desc">Fecha (Más reciente primero)</option>
+                                        <option value="fecha-asc">Fecha (Más antiguo primero)</option>
+                                        <option value="estado">Estado</option>
+                                        <option value="prioridad">Prioridad</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Generar
+                                Reporte</button>
+                            <button type="button" class="btn btn-secondary" id="btnLimpiarFiltros"><i
+                                    class="fas fa-broom"></i> Limpiar Filtros</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3>Resultados del Reporte</h3>
+                        <div>
+                            <button id="exportarPDF" class="btn btn-danger"><i class="fas fa-file-pdf"></i> Exportar
+                                PDF</button>
+                            <button id="exportarExcel" class="btn btn-success"><i class="fas fa-file-excel"></i>
+                                Exportar Excel</button>
+                            <button id="verGraficos" class="btn btn-info"><i class="fas fa-chart-pie"></i> Ver
+                                Gráficos</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="resumenEstadisticas" class="stats-container" style="display: none;">
+                            <!-- Resumen estadístico se cargará aquí -->
+                        </div>
+
+                        <div class="table-responsive">
+                            <table id="tablaReportes">
+                                <thead>
+                                    <tr id="encabezadoReportes">
+                                        <!-- Los encabezados se cargarán dinámicamente -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Los datos se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="paginacionReportes" class="pagination-container mt-3" style="display: none;">
+                            <!-- Paginación se cargará aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Agregar estas líneas antes de tus scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- Configuración Firebase -->
+        <script src="firebase/config.js"></script>
+
+        <!-- Scripts de la aplicación -->
+        <script src="js/app.js"></script>
+        <script src="js/dashboard.js"></script>
+        <script src="js/fallas.js"></script>
+        <script src="js/combustible.js"></script>
+        <script src="js/fallas-nodos.js"></script>
+        <script src="js/falla-general.js"></script>
+        <script src="js/inventario.js"></script>
+        <script src="js/reportes.js"></script>
+</body>
+
+</html>
