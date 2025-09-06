@@ -1,11 +1,29 @@
+// REEMPLAZA TODO TU CÓDIGO ACTUAL CON ESTE:
+
+// Función para obtener la fecha y hora local en el formato correcto
+function getLocalDateTime() {
+    const now = new Date();
+    // Ajustar por el offset de zona horaria
+    const timezoneOffset = now.getTimezoneOffset() * 60000; // offset en milisegundos
+    const localTime = new Date(now.getTime() - timezoneOffset);
+    return localTime.toISOString().slice(0, 16);
+}
+
+// Establecer fecha y hora actual al cargar la página (hora local corregida)
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('fechaCombustible').value = getLocalDateTime();
+});
+
 // Gestión de combustible
-// Busca esta función y modifícala:
 document.getElementById('formCombustible').addEventListener('submit', (e) => {
     e.preventDefault();
     
     const tipo = document.getElementById('tipoMovimiento').value;
     const cantidad = parseFloat(document.getElementById('cantidadCombustible').value);
-    const fecha = new Date(document.getElementById('fechaCombustible').value);
+    
+    // SIEMPRE usar la fecha y hora actual local (ignorando lo que el usuario ve en el campo)
+    const fecha = new Date();
+    
     const notas = document.getElementById('notasCombustible').value;
     
     db.collection('combustible').add({
@@ -18,9 +36,9 @@ document.getElementById('formCombustible').addEventListener('submit', (e) => {
         // Mostrar notificación
         mostrarNotificacion('Movimiento de combustible registrado correctamente', 'success');
         
-        // Limpiar formulario
+        // Limpiar formulario y establecer fecha/hora actual local
         document.getElementById('formCombustible').reset();
-        document.getElementById('fechaCombustible').value = new Date().toISOString().slice(0, 16);
+        document.getElementById('fechaCombustible').value = getLocalDateTime();
         
         cargarCombustible();
         if (document.getElementById('dashboard').classList.contains('active')) {
