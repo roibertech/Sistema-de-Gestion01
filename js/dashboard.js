@@ -129,56 +129,70 @@ function actualizarGraficoFallas(pendientes, resueltas) {
 }
 
 // Actualizar gráfico de combustible
+// Actualizar gráfico de combustible
 function actualizarGraficoCombustible(snapshot) {
     const ctx = document.getElementById('combustibleChart').getContext('2d');
-    
+
     // Preparar datos para el gráfico (últimos 7 movimientos)
-    const entradas = [];
-    const salidas = [];
-    const fechasEntradas = [];
-    const fechasSalidas = [];
-    
+    const movimientos = [];
+
     snapshot.forEach((doc) => {
         const data = doc.data();
-        const fecha = data.fecha.toDate();
-        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'short'
+        movimientos.push({
+            fecha: data.fecha.toDate(),
+            tipo: data.tipo,
+            cantidad: data.cantidad,
+            fechaFormateada: data.fecha.toDate().toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short'
+            })
         });
-        
-        if (data.tipo === 'entrada') {
-            entradas.unshift(data.cantidad);
-            fechasEntradas.unshift(fechaFormateada);
+    });
+
+    // Ordenar movimientos por fecha (más reciente primero)
+    movimientos.sort((a, b) => b.fecha - a.fecha);
+
+    // Tomar solo los últimos 7 movimientos
+    const ultimosMovimientos = movimientos.slice(0, 7);
+
+    // Invertir el orden para mostrar del más antiguo al más reciente en el gráfico
+    ultimosMovimientos.reverse();
+
+    // Preparar datos para el gráfico
+    const labels = [];
+    const entradas = [];
+    const salidas = [];
+
+    ultimosMovimientos.forEach(mov => {
+        labels.push(mov.fechaFormateada);
+
+        if (mov.tipo === 'entrada') {
+            entradas.push(mov.cantidad);
+            salidas.push(0); // Valor cero para salidas
         } else {
-            salidas.unshift(data.cantidad);
-            fechasSalidas.unshift(fechaFormateada);
+            salidas.push(mov.cantidad);
+            entradas.push(0); // Valor cero para entradas
         }
     });
-    
-    // Tomar solo los últimos 7 movimientos para cada tipo
-    const ultimasEntradas = entradas.slice(-7);
-    const ultimasFechasEntradas = fechasEntradas.slice(-7);
-    const ultimasSalidas = salidas.slice(-7);
-    const ultimasFechasSalidas = fechasSalidas.slice(-7);
-    
+
     if (window.combustibleChartInstance) {
         window.combustibleChartInstance.destroy();
     }
-    
+
     window.combustibleChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ultimasFechasEntradas.length > 0 ? ultimasFechasEntradas : ultimasFechasSalidas,
+            labels: labels,
             datasets: [
                 {
                     label: 'Entradas',
-                    data: ultimasEntradas,
+                    data: entradas,
                     backgroundColor: '#28a745',
                     borderWidth: 0
                 },
                 {
                     label: 'Salidas',
-                    data: ultimasSalidas,
+                    data: salidas,
                     backgroundColor: '#dc3545',
                     borderWidth: 0
                 }
@@ -191,7 +205,7 @@ function actualizarGraficoCombustible(snapshot) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value) {
+                        callback: function (value) {
                             return value + ' L';
                         }
                     }
