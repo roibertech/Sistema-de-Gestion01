@@ -1,28 +1,44 @@
 // REEMPLAZA TODO TU CÓDIGO ACTUAL CON ESTE:
 
-// Función para obtener la fecha y hora local en el formato correcto
-function getLocalDateTime() {
-    const now = new Date();
-    // Ajustar por el offset de zona horaria
-    const timezoneOffset = now.getTimezoneOffset() * 60000; // offset en milisegundos
-    const localTime = new Date(now.getTime() - timezoneOffset);
-    return localTime.toISOString().slice(0, 16);
+// Función para formatear fecha al formato YYYY-MM-DDTHH:mm
+function formatDateTimeForInput(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-// Establecer fecha y hora actual al cargar la página (hora local corregida)
+// Función para convertir fecha string a objeto Date (maneja timezone correctamente)
+function parseDateTimeFromInput(dateTimeString) {
+    if (!dateTimeString) return new Date();
+    
+    // Separar fecha y hora
+    const [datePart, timePart] = dateTimeString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    
+    // Crear fecha en zona horaria local
+    return new Date(year, month - 1, day, hours, minutes);
+}
+
+// Establecer fecha y hora actual al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('fechaCombustible').value = getLocalDateTime();
+    document.getElementById('fechaCombustible').value = formatDateTimeForInput(new Date());
 });
 
-// Gestión de combustible
+// Gestión de combustible - ACTUALIZADO PARA USAR LA FECHA SELECCIONADA
 document.getElementById('formCombustible').addEventListener('submit', (e) => {
     e.preventDefault();
     
     const tipo = document.getElementById('tipoMovimiento').value;
     const cantidad = parseFloat(document.getElementById('cantidadCombustible').value);
     
-    // SIEMPRE usar la fecha y hora actual local (ignorando lo que el usuario ve en el campo)
-    const fecha = new Date();
+    // OBTENER LA FECHA DEL CAMPO DE ENTRADA (lo que el usuario seleccionó)
+    const fechaInput = document.getElementById('fechaCombustible').value;
+    const fecha = parseDateTimeFromInput(fechaInput);
     
     const notas = document.getElementById('notasCombustible').value;
     
@@ -36,9 +52,9 @@ document.getElementById('formCombustible').addEventListener('submit', (e) => {
         // Mostrar notificación
         mostrarNotificacion('Movimiento de combustible registrado correctamente', 'success');
         
-        // Limpiar formulario y establecer fecha/hora actual local
+        // Limpiar formulario y establecer fecha/hora actual
         document.getElementById('formCombustible').reset();
-        document.getElementById('fechaCombustible').value = getLocalDateTime();
+        document.getElementById('fechaCombustible').value = formatDateTimeForInput(new Date());
         
         cargarCombustible();
         if (document.getElementById('dashboard').classList.contains('active')) {
@@ -109,7 +125,7 @@ function cargarCombustible() {
         // Agregar event listeners a los botones de eliminar
         document.querySelectorAll('.btn-eliminar-combustible').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
+                const id = e.target.closest('button').getAttribute('data-id');
                 eliminarCombustible(id);
             });
         });
