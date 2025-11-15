@@ -133,47 +133,48 @@ function actualizarGraficoFallas(pendientes, resueltas) {
 function actualizarGraficoCombustible(snapshot) {
     const ctx = document.getElementById('combustibleChart').getContext('2d');
 
-    // Preparar datos para el gráfico (últimos 7 movimientos)
-    const movimientos = [];
+    // Agrupar movimientos por día (clave YYYY-MM-DD) y sumar entradas/salidas
+    const grupos = {};
 
     snapshot.forEach((doc) => {
         const data = doc.data();
-        movimientos.push({
-            fecha: data.fecha.toDate(),
-            tipo: data.tipo,
-            cantidad: data.cantidad,
-            fechaFormateada: data.fecha.toDate().toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: 'short'
-            })
-        });
-    });
+        const fechaObj = data.fecha.toDate();
 
-    // Ordenar movimientos por fecha (más reciente primero)
-    movimientos.sort((a, b) => b.fecha - a.fecha);
+        // Usar componentes locales para la clave (evitar toISOString que usa UTC)
+        const year = fechaObj.getFullYear();
+        const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaObj.getDate()).padStart(2, '0');
+        const key = `${year}-${month}-${day}`; // YYYY-MM-DD en zona local
 
-    // Tomar solo los últimos 7 movimientos
-    const ultimosMovimientos = movimientos.slice(0, 7);
+        if (!grupos[key]) {
+            // Crear Date en zona local a medianoche para orden correcto y formato
+            grupos[key] = { fecha: new Date(year, parseInt(month, 10) - 1, parseInt(day, 10)), entradas: 0, salidas: 0 };
+        }
 
-    // Invertir el orden para mostrar del más antiguo al más reciente en el gráfico
-    ultimosMovimientos.reverse();
-
-    // Preparar datos para el gráfico
-    const labels = [];
-    const entradas = [];
-    const salidas = [];
-
-    ultimosMovimientos.forEach(mov => {
-        labels.push(mov.fechaFormateada);
-
-        if (mov.tipo === 'entrada') {
-            entradas.push(mov.cantidad);
-            salidas.push(0); // Valor cero para salidas
+        if (data.tipo === 'entrada') {
+            grupos[key].entradas += Number(data.cantidad) || 0;
         } else {
-            salidas.push(mov.cantidad);
-            entradas.push(0); // Valor cero para entradas
+            grupos[key].salidas += Number(data.cantidad) || 0;
         }
     });
+
+    // Convertir grupos a array, ordenar por fecha ascendente
+    const dias = Object.keys(grupos).map(k => ({
+        key: k,
+        fecha: grupos[k].fecha,
+        entradas: grupos[k].entradas,
+        salidas: grupos[k].salidas
+    }));
+
+    dias.sort((a, b) => a.fecha - b.fecha);
+
+    // Tomar los últimos 7 días (si hay más)
+    const diasRecientes = dias.slice(-7);
+
+    // Preparar arrays para Chart.js
+    const labels = diasRecientes.map(d => d.fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }));
+    const entradas = diasRecientes.map(d => d.entradas);
+    const salidas = diasRecientes.map(d => d.salidas);
 
     if (window.combustibleChartInstance) {
         window.combustibleChartInstance.destroy();
